@@ -158,7 +158,7 @@ local function v26(p1)
 end
 t1.LogoFile = "Martinez" .. "/logo.png"
 t1.LogoFileLight = "Martinez" .. "/logo-light.png"
-local MARTINEZ_LOGO_ASSET = "rbxassetid://97330468088484"
+local MARTINEZ_LOGO_ASSET = "rbxassetid://1156586322"
 local n1 = 620
 local n2 = 430
 local n3 = 152
