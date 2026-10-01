@@ -211,8 +211,7 @@ local popupOk = pcall(function()
     WindUI:Popup({
         Title   = CreateGradientText("Voidcxz Loader", Colors.Accent, Colors.AccentDark),
         Icon    = "ghost",
-        Content = CreateGradientText("Thankyou for using Voidcxz Script, I hope you enjoy it", Colors.Text, Colors.TextDim)
-            .."<br/>"..CreateGradientText("ESP | Silent Aim | Aimlock | Autofarm", Colors.Accent, Colors.Ghost),
+        Content = CreateGradientText("ESP | Silent Aim | Aimlock | Autofarm", Colors.Accent, Colors.Ghost),
         Buttons = {
             { Title="Exit", Callback=function() LocalPlayer:Kick("Voidcxz Loader closed.") end, Variant="Tertiary" },
             { Title=CreateGradientText("Launch", Colors.Accent, Colors.AccentDark),
@@ -2820,7 +2819,7 @@ if GuideTab then
     local profileLink = Instance.new("TextButton")
     profileLink.Size = UDim2.new(1, 0, 0, 32)
     profileLink.BackgroundTransparency = 1
-    profileLink.Text = "rscripts.net/@voidxz_"
+    profileLink.Text = "https://rscripts.net/@voidxz_"
     profileLink.TextColor3 = Colors.Accent
     profileLink.TextSize = 14
     profileLink.Font = Enum.Font.GothamMedium
