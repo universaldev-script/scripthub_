@@ -132,7 +132,7 @@ do
     end
 end
 local t1 = {
-	Title = "Martinez Domain",
+	Title = "Martinez.",
 	Version = "0.1",
 	Product = "Steal an Egg",
 	OpenBind = Enum.KeyCode.RightShift,
@@ -140,10 +140,10 @@ local t1 = {
 	Tagline = "Auto farm eggs and useful features",
 	Status = "preview",
 	Game = "Steal an Egg",
-	Discord = "https://discord.gg/ZNwS8csX3j",
+	Rscripts = "r.net",
 	Website = "",
 	Changelog = "",
-	Author = "Martinez Domain",
+	Author = "Jm Martinez",
 	Credits = "Thank you to everyone who supports Martinez Domain",
 	Support = "Thank you for your support!"
 }
