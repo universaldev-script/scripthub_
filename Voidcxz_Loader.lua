@@ -2787,126 +2787,125 @@ local GuideSection = SafeCreateSection(Window, {
 })
 local GuideTab = SafeCreateTab(GuideSection, { Title="Info", Icon="info" })
 
+-- Guide content uses WindUI-native elements so it renders correctly inside the Tab.
 if GuideTab then
-    GuideTab:Section({ Title="Welcome", TextSize=18, FontWeight=Enum.FontWeight.SemiBold })
+    GuideTab:Section({
+        Title = "Welcome",
+        TextSize = 17,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
 
-    local welcomeCaption = Instance.new("TextLabel")
-    welcomeCaption.Size = UDim2.new(1, 0, 0, 46)
-    welcomeCaption.BackgroundTransparency = 1
-    welcomeCaption.Text = "Thankyou for using Voidcxz Script, I hope you enjoy it"
-    welcomeCaption.TextColor3 = Colors.TextDim
-    welcomeCaption.TextSize = 14
-    welcomeCaption.Font = Enum.Font.Gotham
-    welcomeCaption.TextWrapped = true
-    welcomeCaption.TextXAlignment = Enum.TextXAlignment.Left
-    welcomeCaption.TextYAlignment = Enum.TextYAlignment.Center
-    welcomeCaption.Parent = GuideTab
+    SafeCreateButton(GuideTab, {
+        Title = "Thankyou for using Voidcxz Script",
+        Desc = "I hope you enjoy it.",
+        Icon = "heart",
+        Color = Colors.Accent,
+        Justify = "Left",
+        Callback = function() end,
+    })
 
     GuideTab:Space()
-    GuideTab:Section({ Title="Credits", TextSize=16, FontWeight=Enum.FontWeight.SemiBold })
 
-    local credits = Instance.new("TextLabel")
-    credits.Size = UDim2.new(1, 0, 0, 28)
-    credits.BackgroundTransparency = 1
-    credits.Text = "Created by: Voidcxz"
-    credits.TextColor3 = Colors.Text
-    credits.TextSize = 15
-    credits.Font = Enum.Font.GothamMedium
-    credits.TextXAlignment = Enum.TextXAlignment.Left
-    credits.TextYAlignment = Enum.TextYAlignment.Center
-    credits.Parent = GuideTab
+    GuideTab:Section({
+        Title = "Credits",
+        TextSize = 16,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
 
-    local profileLink = Instance.new("TextButton")
-    profileLink.Size = UDim2.new(1, 0, 0, 32)
-    profileLink.BackgroundTransparency = 1
-    profileLink.Text = "https://rscripts.net/@voidxz_"
-    profileLink.TextColor3 = Colors.Accent
-    profileLink.TextSize = 14
-    profileLink.Font = Enum.Font.GothamMedium
-    profileLink.TextXAlignment = Enum.TextXAlignment.Left
-    profileLink.AutoButtonColor = false
-    profileLink.Parent = GuideTab
+    SafeCreateButton(GuideTab, {
+        Title = "Created by: Voidcxz",
+        Desc = "Voidcxz Script",
+        Icon = "ghost",
+        Justify = "Left",
+        Callback = function() end,
+    })
 
-    profileLink.MouseEnter:Connect(function()
-        profileLink.TextColor3 = Colors.AccentLight
-    end)
-    profileLink.MouseLeave:Connect(function()
-        profileLink.TextColor3 = Colors.Accent
-    end)
-    profileLink.MouseButton1Click:Connect(function()
-        local url = "https://rscripts.net/@voidxz_"
-        local opened = false
+    SafeCreateButton(GuideTab, {
+        Title = "rscripts.net/@voidxz_",
+        Desc = "Open Voidcxz's RScript profile",
+        Icon = "external-link",
+        Color = Colors.Accent,
+        Justify = "Left",
+        Callback = function()
+            local url = "https://rscripts.net/@voidxz_"
+            local opened = false
 
-        pcall(function()
-            local GuiService = game:GetService("GuiService")
-            if GuiService.OpenBrowserWindow then
-                GuiService:OpenBrowserWindow(url)
-                opened = true
-            end
-        end)
-
-        if not opened then
             pcall(function()
-                if open_url then
-                    open_url(url)
-                    opened = true
-                elseif openurl then
-                    openurl(url)
-                    opened = true
-                elseif syn and syn.open_url then
-                    syn.open_url(url)
+                local GuiService = game:GetService("GuiService")
+                if GuiService.OpenBrowserWindow then
+                    GuiService:OpenBrowserWindow(url)
                     opened = true
                 end
             end)
-        end
 
-        if not opened then
-            pcall(function()
-                if setclipboard then setclipboard(url) end
-            end)
-            WindUI:Notify({Title="Voidcxz", Content="Profile link copied to clipboard.", Icon="link", Duration=2})
-        end
-    end)
+            if not opened then
+                pcall(function()
+                    if open_url then
+                        open_url(url)
+                        opened = true
+                    elseif openurl then
+                        openurl(url)
+                        opened = true
+                    elseif syn and syn.open_url then
+                        syn.open_url(url)
+                        opened = true
+                    end
+                end)
+            end
+
+            if not opened then
+                pcall(function()
+                    if setclipboard then setclipboard(url) end
+                end)
+                WindUI:Notify({
+                    Title = "Voidcxz",
+                    Content = "Profile link copied to clipboard.",
+                    Icon = "link",
+                    Duration = 2,
+                })
+            end
+        end,
+    })
 
     GuideTab:Space()
 
-    GuideTab:Section({ Title="Features", TextSize=16, FontWeight=Enum.FontWeight.SemiBold })
+    GuideTab:Section({
+        Title = "Features",
+        TextSize = 16,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
 
-    local featuresText = Instance.new("TextLabel")
-    featuresText.Size = UDim2.new(1, 0, 0, 200)
-    featuresText.BackgroundTransparency = 1
-    featuresText.Text = [[
-Combat:
-• Silent Aim (Gun)
-• Knife Silent Aim
-• Flick Shot
-• Aimlock
-• Kill All
+    SafeCreateButton(GuideTab, {
+        Title = "Combat",
+        Desc = "Silent Aim • Knife Silent Aim • Flick Shot • Aimlock • Kill All",
+        Icon = "crosshair",
+        Justify = "Left",
+        Callback = function() end,
+    })
 
-Visual:
-• ESP
-• Custom Cursor
-• Custom Skybox
+    SafeCreateButton(GuideTab, {
+        Title = "Visual",
+        Desc = "ESP • Custom Cursor • Custom Skybox",
+        Icon = "eye",
+        Justify = "Left",
+        Callback = function() end,
+    })
 
-Movement:
-• Fly
-• Noclip
-• Speed Glitch
-• Bunny Hop
+    SafeCreateButton(GuideTab, {
+        Title = "Movement",
+        Desc = "Fly • Noclip • Speed Glitch • Bunny Hop",
+        Icon = "move",
+        Justify = "Left",
+        Callback = function() end,
+    })
 
-Utility:
-• Auto Grab Gun
-• Coin Autofarm
-• Smart Bag Full
-• Bomb Jump
-• Fling System
-    ]]
-    featuresText.TextColor3 = Colors.TextDim
-    featuresText.TextSize = 13
-    featuresText.Font = Enum.Font.Gotham
-    featuresText.TextXAlignment = Enum.TextXAlignment.Left
-    featuresText.TextYAlignment = Enum.TextYAlignment.Top
-    featuresText.Parent = GuideTab
+    SafeCreateButton(GuideTab, {
+        Title = "Utility",
+        Desc = "Auto Grab Gun • Coin Autofarm • Smart Bag Full • Bomb Jump • Fling System",
+        Icon = "tool",
+        Justify = "Left",
+        Callback = function() end,
+    })
 end
 
 local SettingsSection = SafeCreateSection(Window, {
