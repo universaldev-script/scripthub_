@@ -211,9 +211,8 @@ local popupOk = pcall(function()
     WindUI:Popup({
         Title   = CreateGradientText("Voidcxz Loader", Colors.Accent, Colors.AccentDark),
         Icon    = "ghost",
-        Content = CreateGradientText("Clean. Simple. Built for MM2.", Colors.Text, Colors.TextDim)
-            .."<br/>"..CreateGradientText("ESP | Silent Aim | Aimlock | Autofarm", Colors.Accent, Colors.Ghost)
-            .."<br/>"..CreateGradientText("Created by: Voidcxz", Colors.Text, Colors.TextDim),
+        Content = CreateGradientText("Thankyou for using Voidcxz Script, I hope you enjoy it", Colors.Text, Colors.TextDim)
+            .."<br/>"..CreateGradientText("ESP | Silent Aim | Aimlock | Autofarm", Colors.Accent, Colors.Ghost),
         Buttons = {
             { Title="Exit", Callback=function() LocalPlayer:Kick("Voidcxz Loader closed.") end, Variant="Tertiary" },
             { Title=CreateGradientText("Launch", Colors.Accent, Colors.AccentDark),
@@ -2792,18 +2791,83 @@ local GuideTab = SafeCreateTab(GuideSection, { Title="Info", Icon="info" })
 if GuideTab then
     GuideTab:Section({ Title="Welcome", TextSize=18, FontWeight=Enum.FontWeight.SemiBold })
 
+    local welcomeCaption = Instance.new("TextLabel")
+    welcomeCaption.Size = UDim2.new(1, 0, 0, 46)
+    welcomeCaption.BackgroundTransparency = 1
+    welcomeCaption.Text = "Thankyou for using Voidcxz Script, I hope you enjoy it"
+    welcomeCaption.TextColor3 = Colors.TextDim
+    welcomeCaption.TextSize = 14
+    welcomeCaption.Font = Enum.Font.Gotham
+    welcomeCaption.TextWrapped = true
+    welcomeCaption.TextXAlignment = Enum.TextXAlignment.Left
+    welcomeCaption.TextYAlignment = Enum.TextYAlignment.Center
+    welcomeCaption.Parent = GuideTab
+
+    GuideTab:Space()
     GuideTab:Section({ Title="Credits", TextSize=16, FontWeight=Enum.FontWeight.SemiBold })
 
     local credits = Instance.new("TextLabel")
-    credits.Size = UDim2.new(1, 0, 0, 70)
+    credits.Size = UDim2.new(1, 0, 0, 28)
     credits.BackgroundTransparency = 1
-    credits.Text = "Created by: Voidcxz\nVoidcxz Loader"
+    credits.Text = "Created by: Voidcxz"
     credits.TextColor3 = Colors.Text
-    credits.TextSize = 16
+    credits.TextSize = 15
     credits.Font = Enum.Font.GothamMedium
     credits.TextXAlignment = Enum.TextXAlignment.Left
     credits.TextYAlignment = Enum.TextYAlignment.Center
     credits.Parent = GuideTab
+
+    local profileLink = Instance.new("TextButton")
+    profileLink.Size = UDim2.new(1, 0, 0, 32)
+    profileLink.BackgroundTransparency = 1
+    profileLink.Text = "rscripts.net/@voidxz_"
+    profileLink.TextColor3 = Colors.Accent
+    profileLink.TextSize = 14
+    profileLink.Font = Enum.Font.GothamMedium
+    profileLink.TextXAlignment = Enum.TextXAlignment.Left
+    profileLink.AutoButtonColor = false
+    profileLink.Parent = GuideTab
+
+    profileLink.MouseEnter:Connect(function()
+        profileLink.TextColor3 = Colors.AccentLight
+    end)
+    profileLink.MouseLeave:Connect(function()
+        profileLink.TextColor3 = Colors.Accent
+    end)
+    profileLink.MouseButton1Click:Connect(function()
+        local url = "https://rscripts.net/@voidxz_"
+        local opened = false
+
+        pcall(function()
+            local GuiService = game:GetService("GuiService")
+            if GuiService.OpenBrowserWindow then
+                GuiService:OpenBrowserWindow(url)
+                opened = true
+            end
+        end)
+
+        if not opened then
+            pcall(function()
+                if open_url then
+                    open_url(url)
+                    opened = true
+                elseif openurl then
+                    openurl(url)
+                    opened = true
+                elseif syn and syn.open_url then
+                    syn.open_url(url)
+                    opened = true
+                end
+            end)
+        end
+
+        if not opened then
+            pcall(function()
+                if setclipboard then setclipboard(url) end
+            end)
+            WindUI:Notify({Title="Voidcxz", Content="Profile link copied to clipboard.", Icon="link", Duration=2})
+        end
+    end)
 
     GuideTab:Space()
 
