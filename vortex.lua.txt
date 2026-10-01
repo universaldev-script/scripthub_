@@ -1,0 +1,337 @@
+-- [[ VORTEXS HUB - STEAL AN EGG ]]
+-- [[ Rayfield UI + Auto Run (Ground) + Boss Speed + Discord + Hidden Auto Steal ]]
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Vortexs Hub",
+   LoadingTitle = "Vortexs Hub",
+   LoadingSubtitle = "Loading Steal an Egg...",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = true,
+   KeySettings = {
+      Title = "Vortexs Hub | Key System",
+      Subtitle = "Get your Key from Discord",
+      Note = "Join: discord.gg/X2HHn8wuu and check #keys",
+      FileName = "VortexsKey",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {
+         "FREE_419jwi76ol5aej7", "FREE_419kxp92qm8bft4", "FREE_419mzn41rw7cgh9",
+         "FREE_419pql58ty3dhv2", "FREE_419rvs63uz1ejk6", "FREE_419twx79va4flm8",
+         "FREE_419uyb85wc2gnp0", "FREE_419vzc91xd6hoq3", "FREE_419wad07ye9ipr5",
+         "FREE_419xbe13zf2jqs7", "FREE_419ycf29ag5ktr8", "FREE_419zdg35bh8lus1",
+         "FREE_419aeh41ci0mvt4", "FREE_419bfi57dj3nwu6", "FREE_419cgj63ek6oxv9",
+         "FREE_419dhk79fl9pyw2", "FREE_419eil85gm2qzx5", "FREE_419fjm91hn5ray8",
+         "FREE_419gkn07io8sbz0", "FREE_419hlo13jp1tca3", "FREE_419imp29kq4udb6",
+         "FREE_419jnq35lr7vec9", "FREE_419kor41ms0wfd2", "FREE_419lps57nt3xge5",
+         "FREE_419mqt63ou6yhf8", "FREE_419nru79pv9zig1", "FREE_419osv85qw2ajh4",
+         "FREE_419ptw91rx5bki7", "FREE_419qux07sy8clj0", "FREE_419rvy13tz1dmk3",
+         "FREE_419swz29ua4enl6", "FREE_419txa35vb7fom9", "FREE_419uyb41wc0gpn2",
+         "FREE_419vzc57xd3hqo5", "FREE_419wad63ye6irp8", "FREE_419xbe79zf9jsq1",
+         "FREE_419ycf85ag2ktr4", "FREE_419zdg91bh5lus7", "FREE_419aeh07ci8mvt0",
+         "FREE_419bfi13dj1nwu3", "FREE_419cgj29ek4oxv6", "FREE_419dhk35fl7pyw9",
+         "FREE_419eil41gm0qzx2", "FREE_419fjm57hn3ray5", "FREE_419gkn63io6sbz8",
+         "FREE_419hlo79jp9tca1", "FREE_419imp85kq2udb4", "FREE_419jnq91lr5vec7",
+         "FREE_419kor07ms8wfd0", "FREE_419lps13nt1xge3", "FREE_419mqt29ou4yhf6",
+         "FREE_419nru35pv7zig9", "FREE_419osv41qw0ajh2", "FREE_419ptw57rx3bki5",
+         "FREE_419qux63sy6clj8", "FREE_419rvy79tz9dmk1", "FREE_419swz85ua2enl4",
+         "FREE_419txa91vb5fom7", "FREE_419uyb07wc8gpn0", "FREE_419vzc13xd1hqo3",
+         "FREE_419wad29ye4irp6", "FREE_419xbe35zf7jsq9", "FREE_419ycf41ag0ktr2",
+         "FREE_419zdg57bh3lus5", "FREE_419aeh63ci6mvt8", "FREE_419bfi79dj9nwu1",
+         "FREE_419cgj85ek2oxv4", "FREE_419dhk91fl5pyw7", "FREE_419eil07gm8qzx0",
+         "FREE_419fjm13hn1ray3", "FREE_419gkn29io4sbz6", "FREE_419hlo35jp7tca9",
+         "FREE_419imp41kq0udb2", "FREE_419jnq57lr3vec5", "FREE_419kor63ms6wfd8",
+         "FREE_419lps79nt9xge1", "FREE_419mqt85ou2yhf4", "FREE_419nru91pv5zig7",
+         "FREE_419osv07qw8ajh0", "FREE_419ptw13rx1bki3", "FREE_419qux29sy4clj6",
+         "FREE_419rvy35tz7dmk9", "FREE_419swz41ua0enl2", "FREE_419txa57vb3fom5",
+         "FREE_419uyb63wc6gpn8", "FREE_419vzc79xd9hqo1", "FREE_419wad85ye2irp4",
+         "FREE_419xbe91zf5jsq7", "FREE_419ycf07ag8ktr0", "FREE_419zdg13bh1lus3",
+         "FREE_419aeh29ci4mvt6", "FREE_419bfi35dj7nwu9", "FREE_419cgj41ek0oxv2",
+         "FREE_419dhk57fl3pyw5", "FREE_419eil63gm6qzx8", "FREE_419fjm79hn9ray1",
+         "FREE_419gkn85io2sbz4", "FREE_419hlo91jp5tca7", "FREE_419imp07kq8udb0",
+         "FREE_419jnq13lr1vec3", "FREE_419kor29ms4wfd6", "FREE_419lps35nt7xge9",
+         "FREE_419mqt41ou0yhf2", "FREE_419nru57pv3zig5", "FREE_419osv63qw6ajh8",
+         "FREE_419ptw79rx9bki1", "FREE_419qux85sy2clj4", "FREE_419rvy91tz5dmk7",
+         "FREE_419swz07ua8enl0", "FREE_419txa13vb1fom3", "FREE_419uyb29wc4gpn6",
+         "FREE_419vzc35xd7hqo9", "FREE_419wad41ye0irp2", "FREE_419xbe57zf3jsq5",
+         "FREE_419ycf63ag6ktr8", "FREE_419zdg79bh9lus1", "FREE_419aeh85ci2mvt4",
+         "FREE_419bfi91dj5nwu7", "FREE_419cgj07ek8oxv0", "FREE_419dhk13fl1pyw3",
+         "FREE_419eil29gm4qzx6", "FREE_419fjm35hn7ray9", "FREE_419gkn41io0sbz2",
+         "FREE_419hlo57jp3tca5", "FREE_419imp63kq6udb8", "FREE_419jnq79lr9vec1",
+         "FREE_419kor85ms2wfd4", "FREE_419lps91nt5xge7"
+      }
+   }
+})
+
+-- ==========================================
+-- TABS
+-- ==========================================
+local MainTab = Window:CreateTab("Main", 4483362458)
+local SettingsTab = Window:CreateTab("Settings", 4483362458)
+local DiscordTab = Window:CreateTab("Discord", 4483362458)
+
+-- ==========================================
+-- VARIABLES
+-- ==========================================
+local Player = game.Players.LocalPlayer
+local SavedSpawn = nil
+local AutoRunSpeed = 150
+local BossSpeed = 100
+local IsRunning = false
+local AutoStealEnabled = true
+
+-- ==========================================
+-- HIDDEN AUTO STEAL EGG (Runs silently)
+-- ==========================================
+local function StartHiddenAutoSteal()
+    task.spawn(function()
+        while AutoStealEnabled do
+            task.wait(0.5)
+            local char = Player.Character
+            if not char then continue end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then continue end
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and (obj.Name:lower():find("egg") or obj.Name:lower():find("huevo")) then
+                    local distance = (obj.Position - hrp.Position).Magnitude
+                    if distance < 15 then
+                        pcall(function()
+                            firetouchinterest(hrp, obj, 0)
+                            firetouchinterest(hrp, obj, 1)
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+end
+StartHiddenAutoSteal()
+
+-- ==========================================
+-- AUTO RUN (GROUND ONLY - NO FLY)
+-- ==========================================
+local function AutoRunToSpawn()
+    if IsRunning then
+        Rayfield:Notify({Title = "Vortexs Hub", Content = "Already running!", Duration = 3})
+        return
+    end
+    if not SavedSpawn then
+        Rayfield:Notify({Title = "Vortexs Hub", Content = "Save a Spawn Point first!", Duration = 3})
+        return
+    end
+
+    local char = Player.Character
+    if not char then return end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+
+    IsRunning = true
+    hum.WalkSpeed = 0
+    hum.JumpPower = 0
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "VortexsRun"
+    bv.MaxForce = Vector3.new(1e5, 0, 1e5) -- Only horizontal force
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.Parent = hrp
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "VortexsGyro"
+    bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bg.P = 1e4
+    bg.Parent = hrp
+
+    local targetPos = SavedSpawn.Position
+    targetPos = Vector3.new(targetPos.X, hrp.Position.Y, targetPos.Z)
+
+    local connection
+    connection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not IsRunning or not hrp or not hrp.Parent then
+            if connection then connection:Disconnect() end
+            return
+        end
+
+        local currentPos = hrp.Position
+        local distance = (Vector3.new(targetPos.X, currentPos.Y, targetPos.Z) - currentPos).Magnitude
+
+        if distance < 10 then
+            IsRunning = false
+            bv:Destroy()
+            bg:Destroy()
+            hum.WalkSpeed = 16
+            hum.JumpPower = 50
+            if connection then connection:Disconnect() end
+            Rayfield:Notify({Title = "Vortexs Hub", Content = "Arrived at Spawn!", Duration = 3})
+            return
+        end
+
+        local direction = (targetPos - currentPos)
+        direction = Vector3.new(direction.X, 0, direction.Z).Unit
+
+        bv.Velocity = direction * AutoRunSpeed
+        bg.CFrame = CFrame.new(hrp.Position, hrp.Position + direction)
+    end)
+
+    Rayfield:Notify({Title = "Vortexs Hub", Content = "Running to Spawn...", Duration = 3})
+end
+
+local function StopAutoRun()
+    IsRunning = false
+    local char = Player.Character
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hrp then
+            local bv = hrp:FindFirstChild("VortexsRun")
+            local bg = hrp:FindFirstChild("VortexsGyro")
+            if bv then bv:Destroy() end
+            if bg then bg:Destroy() end
+        end
+        if hum then
+            hum.WalkSpeed = 16
+            hum.JumpPower = 50
+        end
+    end
+    Rayfield:Notify({Title = "Vortexs Hub", Content = "Auto Run stopped.", Duration = 3})
+end
+
+-- ==========================================
+-- MAIN TAB
+-- ==========================================
+MainTab:CreateSection("Spawn Point")
+
+MainTab:CreateButton({
+   Name = "📍 Save Spawn Point",
+   Callback = function()
+       local char = Player.Character
+       if char then
+           local hrp = char:FindFirstChild("HumanoidRootPart")
+           if hrp then
+               SavedSpawn = hrp.CFrame
+               Rayfield:Notify({Title = "Vortexs Hub", Content = "Spawn Point saved!", Duration = 3})
+           end
+       end
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🏃 Auto Run to Spawn",
+   Callback = function()
+       AutoRunToSpawn()
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "⏹️ Stop Auto Run",
+   Callback = function()
+       StopAutoRun()
+   end,
+})
+
+MainTab:CreateSlider({
+   Name = "⚡ Auto Run Speed",
+   Range = {50, 1000},
+   Increment = 10,
+   Suffix = " studs/s",
+   CurrentValue = 150,
+   Flag = "AutoRunSlider",
+   Callback = function(Value)
+       AutoRunSpeed = Value
+       print("Vortexs Hub: Auto Run Speed set to " .. Value)
+   end,
+})
+
+-- ==========================================
+-- SETTINGS TAB
+-- ==========================================
+SettingsTab:CreateSection("Boss Speed Settings")
+
+SettingsTab:CreateSlider({
+   Name = "⚡ Boss Speed (studs/s)",
+   Range = {100, 1000000000},
+   Increment = 1000,
+   Suffix = " studs/s",
+   CurrentValue = 100,
+   Flag = "BossSpeedSlider",
+   Callback = function(Value)
+       BossSpeed = Value
+       print("Vortexs Hub: Boss Speed set to " .. Value)
+   end,
+})
+
+SettingsTab:CreateButton({
+   Name = "✅ Apply Boss Speed",
+   Callback = function()
+       local char = Player.Character
+       if char then
+           local hum = char:FindFirstChildOfClass("Humanoid")
+           if hum then
+               hum.WalkSpeed = BossSpeed
+               Rayfield:Notify({Title = "Vortexs Hub", Content = "Speed applied: " .. BossSpeed, Duration = 3})
+           end
+       end
+   end,
+})
+
+SettingsTab:CreateButton({
+   Name = "🔄 Reset Speed",
+   Callback = function()
+       local char = Player.Character
+       if char then
+           local hum = char:FindFirstChildOfClass("Humanoid")
+           if hum then
+               hum.WalkSpeed = 16
+               Rayfield:Notify({Title = "Vortexs Hub", Content = "Speed reset to default.", Duration = 3})
+           end
+       end
+   end,
+})
+
+-- ==========================================
+-- DISCORD TAB
+-- ==========================================
+DiscordTab:CreateSection("Join Vortexs Demons")
+
+DiscordTab:CreateParagraph({
+   Title = "Vortexs Demons",
+   Content = "Join our Discord server for:\n• Free Keys\n• Script Updates\n• Support\n• Giveaways\n\nClick the button below to join!"
+})
+
+DiscordTab:CreateButton({
+   Name = "🔗 Join Discord Server",
+   Callback = function()
+       local url = "https://discord.gg/X2HHn8wuu"
+       pcall(function()
+           game:GetService("GuiService"):OpenBrowserWindow(url)
+       end)
+       if setclipboard then
+           setclipboard(url)
+           Rayfield:Notify({Title = "Vortexs Hub", Content = "Discord link copied to clipboard!", Duration = 5})
+       end
+   end,
+})
+
+DiscordTab:CreateButton({
+   Name = "📋 Copy Discord Link",
+   Callback = function()
+       local url = "https://discord.gg/X2HHn8wuu"
+       if setclipboard then
+           setclipboard(url)
+           Rayfield:Notify({Title = "Vortexs Hub", Content = "Discord link copied!", Duration = 3})
+       else
+           Rayfield:Notify({Title = "Vortexs Hub", Content = "Clipboard not supported on this executor.", Duration = 3})
+       end
+   end,
+})
+
+-- ==========================================
+-- NOTIFICATION
+-- ==========================================
+Rayfield:Notify({
+   Title = "Vortexs Hub",
+   Content = "Loaded! Join our Discord for keys: discord.gg/X2HHn8wuu",
+   Duration = 5
+})
