@@ -88,50 +88,120 @@ local function CreateGradientText(text, color1, color2)
 end
 
 local function CreateFPSPingCounter()
-    local sg = Instance.new("ScreenGui", CoreGui)
-    sg.Name = "VoidcxzLoaderStats" sg.ResetOnSpawn = false sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "VoidcxzLoaderStats"
+    sg.ResetOnSpawn = false
+    sg.IgnoreGuiInset = true
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Parent = CoreGui
 
-    local function makeFrame(pos)
-        local f = Instance.new("Frame", sg)
-        f.Size = UDim2.new(0,150,0,70) f.Position = pos
-        f.BackgroundColor3 = Colors.Surface f.BackgroundTransparency = 0.3 f.BorderSizePixel = 0
-        Instance.new("UICorner", f).CornerRadius = UDim.new(0.15, 0)
-        local s = Instance.new("UIStroke", f)
-        s.Color = Colors.Accent s.Thickness = 2 s.Transparency = 0.5
-        return f
+    -- Compact HUD: one small pill instead of two large cards.
+    local bar = Instance.new("Frame")
+    bar.Name = "StatsBar"
+    bar.Size = UDim2.new(0, 178, 0, 30)
+    bar.Position = UDim2.new(0, 12, 0, 12)
+    bar.BackgroundColor3 = Colors.Surface
+    bar.BackgroundTransparency = 0.12
+    bar.BorderSizePixel = 0
+    bar.Parent = sg
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 10)
+
+    local stroke = Instance.new("UIStroke", bar)
+    stroke.Color = Colors.AccentLight
+    stroke.Thickness = 1
+    stroke.Transparency = 0.72
+
+    local padding = Instance.new("UIPadding", bar)
+    padding.PaddingLeft = UDim.new(0, 9)
+    padding.PaddingRight = UDim.new(0, 9)
+
+    local layout = Instance.new("UIListLayout", bar)
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.Padding = UDim.new(0, 8)
+
+    local function makeStat(labelText, valueText, width)
+        local holder = Instance.new("Frame")
+        holder.Size = UDim2.new(0, width, 1, 0)
+        holder.BackgroundTransparency = 1
+        holder.Parent = bar
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0, width, 0, 11)
+        label.Position = UDim2.new(0, 0, 0, 3)
+        label.BackgroundTransparency = 1
+        label.Text = labelText
+        label.TextColor3 = Colors.TextDim
+        label.TextSize = 8
+        label.Font = Enum.Font.GothamBold
+        label.TextXAlignment = Enum.TextXAlignment.Center
+        label.Parent = holder
+
+        local value = Instance.new("TextLabel")
+        value.Size = UDim2.new(0, width, 0, 13)
+        value.Position = UDim2.new(0, 0, 0, 13)
+        value.BackgroundTransparency = 1
+        value.Text = valueText
+        value.TextColor3 = Colors.Text
+        value.TextSize = 11
+        value.Font = Enum.Font.GothamBold
+        value.TextXAlignment = Enum.TextXAlignment.Center
+        value.Parent = holder
+
+        return value
     end
-    local function makeLabel(parent, pos, text, size, color, bold)
-        local l = Instance.new("TextLabel", parent)
-        l.Size = UDim2.new(1,0,0.5,0) l.Position = pos l.BackgroundTransparency = 1
-        l.Text = text l.TextColor3 = color l.TextSize = size
-        l.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
-        return l
-    end
 
-    local fpsF = makeFrame(UDim2.new(0,10,0,10))
-    makeLabel(fpsF, UDim2.new(0,0,0,5), "FPS", 14, Colors.Accent, true)
-    local fpsV = makeLabel(fpsF, UDim2.new(0,0,0.5,-5), "0", 24, Colors.Text, true)
+    local fpsV = makeStat("FPS", "--", 38)
+    local pingV = makeStat("PING", "--", 48)
+    local hbV = makeStat("HB", "●", 28)
 
-    local pingF = makeFrame(UDim2.new(0,10,0,90))
-    makeLabel(pingF, UDim2.new(0,0,0,5), "PING", 14, Colors.Accent, true)
-    local pingV = makeLabel(pingF, UDim2.new(0,0,0.5,-5), "0 ms", 20, Colors.Text, true)
+    local divider1 = Instance.new("Frame")
+    divider1.Size = UDim2.new(0, 1, 0, 14)
+    divider1.BackgroundColor3 = Colors.AccentLight
+    divider1.BackgroundTransparency = 0.8
+    divider1.BorderSizePixel = 0
+    divider1.Parent = bar
+
+    local divider2 = divider1:Clone()
+    divider2.Parent = bar
 
     local last, frames = tick(), 0
+    local heartbeatCount, heartbeatLast = 0, tick()
+
     RunService.Heartbeat:Connect(function()
-        frames = frames + 1
+        frames += 1
+        heartbeatCount += 1
         local now = tick()
+
         if now - last >= 1 then
-            local fps = frames/(now-last)
-            fpsV.Text = tostring(math.floor(fps))
-            fpsV.TextColor3 = fps>=60 and Color3.fromRGB(0,255,0) or (fps>=30 and Color3.fromRGB(255,255,0) or Color3.fromRGB(255,0,0))
-            frames = 0 last = now
+            local fps = frames / (now - last)
+            fpsV.Text = tostring(math.floor(fps + 0.5))
+            fpsV.TextColor3 = fps >= 60 and Color3.fromRGB(90, 255, 150)
+                or (fps >= 30 and Color3.fromRGB(255, 220, 80) or Color3.fromRGB(255, 90, 90))
+            frames = 0
+            last = now
         end
-        local ok2, p = pcall(function() return Stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
+
+        if now - heartbeatLast >= 1 then
+            local hb = heartbeatCount / (now - heartbeatLast)
+            hbV.Text = "● " .. tostring(math.floor(hb + 0.5))
+            hbV.TextColor3 = hb >= 50 and Color3.fromRGB(90, 255, 150)
+                or (hb >= 30 and Color3.fromRGB(255, 220, 80) or Color3.fromRGB(255, 90, 90))
+            heartbeatCount = 0
+            heartbeatLast = now
+        end
+
+        local ok2, p = pcall(function()
+            return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+        end)
         if ok2 and p then
-            pingV.Text = math.floor(p).." ms"
-            pingV.TextColor3 = p<=100 and Color3.fromRGB(0,255,0) or (p<=200 and Color3.fromRGB(255,255,0) or Color3.fromRGB(255,0,0))
+            pingV.Text = math.floor(p + 0.5) .. "ms"
+            pingV.TextColor3 = p <= 100 and Color3.fromRGB(90, 255, 150)
+                or (p <= 200 and Color3.fromRGB(255, 220, 80) or Color3.fromRGB(255, 90, 90))
         end
     end)
+
     return sg
 end
 local statsGui = CreateFPSPingCounter()
@@ -143,7 +213,7 @@ local popupOk = pcall(function()
         Icon    = "ghost",
         Content = CreateGradientText("Clean. Simple. Built for MM2.", Colors.Text, Colors.TextDim)
             .."<br/>"..CreateGradientText("ESP | Silent Aim | Aimlock | Autofarm", Colors.Accent, Colors.Ghost)
-            .."<br/>"..CreateGradientText("Created by: Voidcxz —", Colors.Text, Colors.TextDim),
+            .."<br/>"..CreateGradientText("Created by: Voidcxz", Colors.Text, Colors.TextDim),
         Buttons = {
             { Title="Exit", Callback=function() LocalPlayer:Kick("Voidcxz Loader closed.") end, Variant="Tertiary" },
             { Title=CreateGradientText("Launch", Colors.Accent, Colors.AccentDark),
@@ -161,15 +231,15 @@ local Window
 local wOk, wErr = pcall(function()
     Window = WindUI:CreateWindow({
         Title = CreateGradientText("Voidcxz Loader", Colors.Accent, Colors.AccentDark),
-        Author = "Created by: Voidcxz —",
+        Author = "Created by: Voidcxz",
         Folder = "VoidcxzLoader",
         Icon   = "ghost",
         NewElements = true,
-        Size   = UDim2.new(0,620,0,520),
+        Size   = UDim2.new(0,580,0,480),
         Transparent = true,
         BackgroundTransparency = 0.3,
         Theme  = "Dark",
-        SideBarWidth = 235,
+        SideBarWidth = 205,
         HideSearchBar = false,
         ScrollBarEnabled = true,
         OpenButton = {
@@ -194,10 +264,10 @@ local function CreateVoidcxzBadge()
     sg.Parent = CoreGui
 
     local card = Instance.new("Frame")
-    card.Size = UDim2.new(0, 190, 0, 62)
-    card.Position = UDim2.new(0, 10, 0, 10)
+    card.Size = UDim2.new(0, 42, 0, 42)
+    card.Position = UDim2.new(0, 196, 0, 10)
     card.BackgroundColor3 = Colors.Surface
-    card.BackgroundTransparency = 0.12
+    card.BackgroundTransparency = 0.05
     card.BorderSizePixel = 0
     card.Parent = sg
     Instance.new("UICorner", card).CornerRadius = UDim.new(0, 12)
@@ -208,15 +278,15 @@ local function CreateVoidcxzBadge()
     stroke.Thickness = 1
 
     local avatar = Instance.new("ImageLabel", card)
-    avatar.Size = UDim2.new(0, 46, 0, 46)
-    avatar.Position = UDim2.new(0, 8, 0.5, -23)
+    avatar.Size = UDim2.new(1, -6, 1, -6)
+    avatar.Position = UDim2.new(0, 3, 0, 3)
     avatar.BackgroundTransparency = 1
     avatar.Image = VOIDCXZ_IMAGE_ID:match("^rbxassetid://") and VOIDCXZ_IMAGE_ID or ("rbxassetid://"..VOIDCXZ_IMAGE_ID)
     avatar.ScaleType = Enum.ScaleType.Crop
-    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+    Instance.new("UICorner", avatar).CornerRadius = UDim.new(0, 10)
 
     local title = Instance.new("TextLabel", card)
-    title.Size = UDim2.new(1, -66, 0, 24)
+    title.Size = UDim2.new(0, 0, 0, 0)
     title.Position = UDim2.new(0, 64, 0, 8)
     title.BackgroundTransparency = 1
     title.Text = "Voidcxz Loader"
@@ -226,10 +296,10 @@ local function CreateVoidcxzBadge()
     title.TextXAlignment = Enum.TextXAlignment.Left
 
     local credit = Instance.new("TextLabel", card)
-    credit.Size = UDim2.new(1, -66, 0, 20)
+    credit.Size = UDim2.new(0, 0, 0, 0)
     credit.Position = UDim2.new(0, 64, 0, 31)
     credit.BackgroundTransparency = 1
-    credit.Text = "Created by: Voidcxz —"
+    credit.Text = "Created by: Voidcxz"
     credit.TextColor3 = Colors.TextDim
     credit.TextSize = 11
     credit.Font = Enum.Font.Gotham
@@ -2727,7 +2797,7 @@ if GuideTab then
     local credits = Instance.new("TextLabel")
     credits.Size = UDim2.new(1, 0, 0, 70)
     credits.BackgroundTransparency = 1
-    credits.Text = "Created by: Voidcxz —\nVoidcxz Loader"
+    credits.Text = "Created by: Voidcxz\nVoidcxz Loader"
     credits.TextColor3 = Colors.Text
     credits.TextSize = 16
     credits.Font = Enum.Font.GothamMedium
